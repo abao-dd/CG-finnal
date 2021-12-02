@@ -34,6 +34,9 @@ https://blog.csdn.net/qq_20009015/article/details/84728412
 说明：本地设置key才能上传文件，附上参考博客
 https://blog.csdn.net/lqtcsq/article/details/82748066
 
-
+-------------------第六部分-----------------------------------------------------------------------
+说明：拉取并合并新提交的更新项目
+1.git fetch 拉取
+2.git merge 合并
 
 
