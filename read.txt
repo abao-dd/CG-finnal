@@ -14,6 +14,9 @@ git push -u origin master  //将本地仓库推送到远端仓库， 本地记�
 …or push an existing repository from the command line
 git remote add origin https://github.com/xiaoxinglai/concurrent_learn.git
 git push -u origin master
-————————————————
-版权声明：本文为CSDN博主「公众号:程序员与王子喵 欢迎关注」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/qq_20009015/article/details/84728412
+
+提交流程
+1.git status ————查看有哪些文件更新过
+2.git add 文件名    ———— 添加文件  （git add . 添加所有文件）
+3.git commit -m "CG大作业"  ————添加到本地暂缓存区
+4.git push -u origin master ————发送缓存区的文件到GitHub上
