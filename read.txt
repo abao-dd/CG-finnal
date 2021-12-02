@@ -1,0 +1,2 @@
+先看文档再进行操作
+echo "target/ .idea/ *.iml .project .settings .classpath bin/ .DS_Store" >> .gitignore   可以用echo命令创建 也可以手动创建
