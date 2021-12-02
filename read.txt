@@ -1,2 +1,19 @@
 先看文档再进行操作
+
 echo "target/ .idea/ *.iml .project .settings .classpath bin/ .DS_Store" >> .gitignore   可以用echo命令创建 也可以手动创建
+
+…or create a new repository on the command line
+echo "# concurrent_learn" >> README.md   //创建一个文件README.md 里面的内容为 concurrent_learn
+git init   //初始化一个本地git仓库
+git add README.md  //将README.md 添加到git仓库记录中 
+git commit -m "first commit" //将更改记录提交到本地暂存区  备注为first commit
+git remote add origin https://github.com/xiaoxinglai/concurrent_learn.git  //关联远端仓库
+git push -u origin master  //将本地仓库推送到远端仓库， 本地记录推送到远端的master分支上
+这是先在本地用命令行执行如上命令 创建一个新的本地的git仓库 并推送到这个远程仓库上。
+
+…or push an existing repository from the command line
+git remote add origin https://github.com/xiaoxinglai/concurrent_learn.git
+git push -u origin master
+————————————————
+版权声明：本文为CSDN博主「公众号:程序员与王子喵 欢迎关注」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_20009015/article/details/84728412
