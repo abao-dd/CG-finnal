@@ -1,0 +1,14 @@
+#version 330 core
+out vec4 FragColor;
+uniform int white;
+
+void main()
+{
+    if(white==2){
+        FragColor = vec4(1.0);
+    }else if(white==1){
+        FragColor = vec4(0.5); 
+    }else if(white==0){
+        FragColor = vec4(0.0);
+    }
+}
