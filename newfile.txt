@@ -1,2 +1,0 @@
-the file test
-do thing
