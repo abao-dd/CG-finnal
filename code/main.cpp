@@ -47,30 +47,32 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_FRONT);
-    //glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    glFrontFace(GL_CW);
 
-    // 着色器
+    // 创建着色器程序
     // maze
     Shader boxShader("shaderfile/material_vs.txt", "shaderfile/material_fs.txt");
     //minimaze
     Shader minimazeShader("shaderfile/minimaze_vs.txt", "shaderfile/minimaze_fs.txt");
-    //sky
+    //skybox
     Shader skyboxShader("shaderfile/skybox_vs.txt", "shaderfile/skybox_fs.txt");
     //light
     Shader lightCubeShader("shaderfile/light_vs.txt", "shaderfile/light_fs.txt");
 
-    //阴影贴图，深度贴图  .new
+    //阴影贴图，深度贴图
     Shader simpleDepthShader("shaderfile/shadowmap_vs.txt", "shaderfile/shadowmap_fs.txt");
     Shader debugDepthQuad("shaderfile/debug_quad_vs.txt", "shaderfile/debug_quad_fs.txt");
-    // model
+    // 模型
     Shader modelShader("shaderfile/model_loading_vs.txt", "shaderfile/model_loading_fs.txt");
     // 文字
     Shader textShader("shaderfile/freetype_vs.txt", "shaderfile/freetype_fs.txt");
 
     // 加载模型
+    // 岛屿模型
     Model islandModel("model/82-island/Files/fbx file/island.fbx");
+    // 人物模型
     myModel = Model("model/Ayaka model/Ayaka model.pmx");
 
     // 迷宫参数
@@ -116,52 +118,14 @@ int main()
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-    // 加载和编译用于渲染字形的着色器程序
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
-    textShader.use();
-    glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-    std::string fontPath = "C:\\Windows\\Fonts\\STXINGKA.TTF";      // 中文字体，华文行楷
-    glm::uvec2 pixelSize = glm::uvec2(48, 48);  // 字体宽高
-    getUnicodeGlyph(Characters, fontPath, pixelSize);
-
-    fontPath = "C:\\Windows\\Fonts\\arial.ttf";                     // 英文字母字体
-    getAsciiGlyph(Characters, fontPath, pixelSize);
-
-    // Configure textVAO/textVBO for texture quads
-    glGenVertexArrays(1, &textVAO);
-    glGenBuffers(1, &textVBO);
-    glBindVertexArray(textVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    sentences.push_back(Sentence({ 0, 1, 2, 3 }, glm::vec2(SCR_WIDTH / 4, SCR_HEIGHT * 0.8), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 2.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "迷宫探险"
-    sentences.push_back(Sentence({ 4, 5, 6, 7 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.6), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "开始游戏"
-    sentences.push_back(Sentence({ 8, 9, 10, 11 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.4), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "游戏说明"
-    sentences.push_back(Sentence({ 12, 13, 14, 15 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.2), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "查看网格"
-    sentences.push_back(Sentence({ 16, 17 }, glm::vec2(0.85 * SCR_WIDTH, 0.07 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 0.7f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "返回"
-    sentences.push_back(Sentence({ 18, 19, 20, 21, 22, 23, 24, 25, 26, 27 }, glm::vec2(0.1 * SCR_WIDTH, 0.8 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.35f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "逃出错综复杂的迷宫吧"
-    sentences.push_back(Sentence({ 28, 29, 30, 31, 32, 33 }, glm::vec2(0.4125 * SCR_WIDTH, 0.58 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "控制人物移动"
-    sentences.push_back(Sentence({ 34, 35, 36, 37, 38, 39, 40, 41 }, glm::vec2(0.25 * SCR_WIDTH, 0.41 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "鼠标移动调整视角"
-    sentences.push_back(Sentence({ 42, 43, 44, 45, 46, 47, 48, 49 }, glm::vec2(0.25 * SCR_WIDTH, 0.25 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "鼠标滚轮进行缩放"
-    sentences.push_back(Sentence({ 50, 51, 52, 53, 54, 55, 56, 57 }, glm::vec2(SCR_WIDTH *0.02f, SCR_HEIGHT * 0.7), glm::vec2(0.0f, 0.0f),
-        SCR_WIDTH * 2.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "恭喜你逃出了迷宫"
+    // 加载文字字形纹理
+    std::string fontPathChi = "C:\\Windows\\Fonts\\STXINGKA.TTF";   // 中文字体
+    std::string fontPathEng = "C:\\Windows\\Fonts\\arial.ttf";      // 英文字母字体
+    glm::uvec2 pixelSize = glm::uvec2(48, 48);                      // 字体宽高
+    loadGlyph(textShader, fontPathChi, fontPathEng, pixelSize);
 
     // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
@@ -191,10 +155,11 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // render ...
+        // 状态机处理，不同状态渲染不同界面
+        // ----------
+        // “开始目录”状态
         if (gameState == STARTMENU) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            // activate shader
             textShader.use();
             // "迷宫探险"
             sentences[0].Draw(textShader);
@@ -206,6 +171,7 @@ int main()
             sentences[3].Draw(textShader);
         }
 
+        // “游戏说明”状态
         if (gameState == INTRODUCTION) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             // "逃出错综复杂的迷宫吧"
@@ -221,45 +187,37 @@ int main()
             sentences[4].Draw(textShader);
         }
 
+        // “查看网格”状态
         if (gameState == MESHVIEWING) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             
             // 渲染人物
             modelShader.use();
-
-            glm::mat4 projection = glm::perspective(glm::radians(camera3.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-            modelShader.setMat4("projection", projection);
-
-            glm::mat4 view = camera3.GetViewMatrix();
-            modelShader.setMat4("view", view);
-
             myModel.SetModelTransformation(glm::vec3(0.0f, -myModel.getOriginalCenter().y * 0.2, 0.0f), 0.0f, 0.2f);
-            modelShader.setMat4("model", myModel.ModelMat);
-
-            myModel.Draw(modelShader);
+            render_character(modelShader, myModel, camera3);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 
             // "返回"
             sentences[4].Draw(textShader);
         }
 
+        // “开始游戏”状态
         if (gameState == GAMING) {
             if (firstGaming) {
-                // 游戏模式下，人物和摄像机的初始位置
+                // 刚进入游戏模式时，设置好人物和摄像机的初始位置
                 modelShader.use();
                 MODELSCALE = cell_size / 40;
-                myModel.SetModelTransformation(entrancePos, 0.0f);
-                modelShader.setMat4("model", myModel.ModelMat);
+                myModel.SetModelTransformation(entrancePos, glm::radians(90.0f));
 
-                camera1 = Camera(myModel.getChangedCenter() + glm::vec3(0.0f, 0.0f, -cell_size / 2),
+                camera1 = Camera(myModel.getChangedCenter() + glm::vec3(-cell_size / 2, 0.0f, 0.0f),
                     myModel.getChangedCenter(), cell_size / 2);
 
                 firstGaming = false;
             }
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
             // 1. render depth of scene to texture (from light's perspective) .new
             // --------------------------------------------------------------
             glm::mat4 lightProjection, lightView;
@@ -309,21 +267,14 @@ int main()
 
             // 渲染人物
             modelShader.use();
-            glm::mat4 projection = glm::perspective(glm::radians(camera1.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-            modelShader.setMat4("projection", projection);
+            render_character(modelShader, myModel, camera1);
 
-            glm::mat4 cModelView = camera1.GetViewMatrix();
-            modelShader.setMat4("view", cModelView);
-
-            modelShader.setMat4("model", myModel.ModelMat);
-
-            myModel.Draw(modelShader);
-
-            //天空盒
+            // 天空盒
             skyboxShader.use();
             render_skybox(skyboxShader, cubemapTexture, camera1);
         }
 
+        // “游戏结束”状态
         if (gameState == ENDING) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -341,18 +292,21 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
     deletevao();
     glfwTerminate();
     return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// processInput()函数处理键盘和鼠标点击事件，根据所处状态做出相应的响应
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window)
 {
+    // esc键退出程序，全状态通用
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    // “开始目录”状态，处理鼠标点击事件。鼠标点击不同的文字导致状态机的变化。
     if (gameState == STARTMENU) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             if (MouseLeftButtonPress == false) {
@@ -394,7 +348,8 @@ void processInput(GLFWwindow* window)
             MouseLeftButtonPress = false;
         }
     }
-
+    
+    // “游戏说明”状态，处理鼠标点击事件。鼠标点击“返回”可以回到开始界面。
     else if (gameState == INTRODUCTION) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             if (MouseLeftButtonPress == false) {
@@ -424,7 +379,8 @@ void processInput(GLFWwindow* window)
         }
     }
 
-    if (gameState == MESHVIEWING) {
+    // “查看网格”状态，处理键盘和鼠标点击事件。。。。。。。。。。待修改
+    else if (gameState == MESHVIEWING) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
             glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
@@ -459,7 +415,8 @@ void processInput(GLFWwindow* window)
 
     }
 
-    if (gameState == GAMING) {
+    // 
+    else if (gameState == GAMING) {
         float modelSpeed = 0.5f * deltaTime;
         float modelRotSpeed = 0.7f * deltaTime;
 
@@ -559,15 +516,15 @@ void processInput(GLFWwindow* window)
         if (glm::distance(myModel.Position, exitPos) <= cell_size / 2) {
             gameState = ENDING;
         }
-        //if (glm::distance(myModel.Position, entrancePos + glm::vec3(0.0f, 0.0f, cell_size)) <= cell_size / 2) {
-        //    gameState = ENDING;
-        //}
-        //if (glm::distance(myModel.Position, entrancePos + glm::vec3(cell_size, 0.0f, 0.0f)) <= cell_size / 2) {
-        //    gameState = ENDING;
-        //}
+        if (glm::distance(myModel.Position, entrancePos + glm::vec3(0.0f, 0.0f, cell_size)) <= cell_size / 2) {
+            gameState = ENDING;
+        }
+        if (glm::distance(myModel.Position, entrancePos + glm::vec3(cell_size, 0.0f, 0.0f)) <= cell_size / 2) {
+            gameState = ENDING;
+        }
     }
 
-    if (gameState == ENDING) {
+    else if (gameState == ENDING) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
             glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
@@ -606,6 +563,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+
+// 鼠标移动会自动调用该函数，计算鼠标位置和偏移。。。。。。。。。待修改
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)

@@ -18,8 +18,8 @@
 #include<iomanip>
 
 // window settings
-const unsigned int SCR_WIDTH = 1200;
-const unsigned int SCR_HEIGHT = 900;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 // timing
 float deltaTime = 0.0f;
@@ -353,17 +353,26 @@ void render_island(Shader& modelShader, Model& mmodel, Camera& camera) {
     modelShader.setMat4("model", model);
     mmodel.Draw(modelShader);
 
-    ////人物模型
+    //
     //    //modelShader.use();
-    //modelShader.setMat4("projection", projection);
-    //modelShader.setMat4("view", view);
-    //model = glm::mat4(1.0f);
-    //model = glm::translate(model, glm::vec3(-maze_size / 2 + cell_size / 2, 0.5f, -maze_size / 2 + cell_size / 2));
-    //model = glm::scale(model, glm::vec3(cell_size / 20, cell_size / 20, cell_size / 20));
-    //modelShader.setMat4("model", model);
-    //pmodel.Draw(modelShader);
+
 
 }
+
+//加载人物模型
+void render_character(Shader& modelShader, Model& cmodel, Camera& camera)
+{
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    modelShader.setMat4("projection", projection);
+
+    glm::mat4 cModelView = camera.GetViewMatrix();
+    modelShader.setMat4("view", cModelView);
+
+    modelShader.setMat4("model", myModel.ModelMat);
+
+    myModel.Draw(modelShader);
+}
+
 void deletevao() {
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteVertexArrays(1, &boxVAO);
@@ -450,6 +459,52 @@ unsigned int loadCubemap(vector<std::string> faces)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
+}
+
+// 加载字形
+void loadGlyph(Shader& textShader, std::string fontPathChinese, std::string fontPathEnglish, glm::uvec2 pixelSize)
+{
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
+    textShader.use();
+    glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    // 传入参加获取字形纹理
+    getUnicodeGlyph(Characters, fontPathChinese, pixelSize);
+    getAsciiGlyph(Characters, fontPathEnglish, pixelSize);
+
+    // Configure textVAO/textVBO for texture quads
+    glGenVertexArrays(1, &textVAO);
+    glGenBuffers(1, &textVBO);
+    glBindVertexArray(textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // 设置需要的句子
+    sentences.push_back(Sentence({ 0, 1, 2, 3 }, glm::vec2(SCR_WIDTH / 4, SCR_HEIGHT * 0.8), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 2.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "迷宫探险"
+    sentences.push_back(Sentence({ 4, 5, 6, 7 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.6), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "开始游戏"
+    sentences.push_back(Sentence({ 8, 9, 10, 11 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.4), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "游戏说明"
+    sentences.push_back(Sentence({ 12, 13, 14, 15 }, glm::vec2(SCR_WIDTH * 3 / 8, SCR_HEIGHT * 0.2), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "查看网格"
+    sentences.push_back(Sentence({ 16, 17 }, glm::vec2(0.85 * SCR_WIDTH, 0.07 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 0.7f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "返回"
+    sentences.push_back(Sentence({ 18, 19, 20, 21, 22, 23, 24, 25, 26, 27 }, glm::vec2(0.1 * SCR_WIDTH, 0.8 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.35f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "逃出错综复杂的迷宫吧"
+    sentences.push_back(Sentence({ 28, 29, 30, 31, 32, 33 }, glm::vec2(0.4125 * SCR_WIDTH, 0.58 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "控制人物移动"
+    sentences.push_back(Sentence({ 34, 35, 36, 37, 38, 39, 40, 41 }, glm::vec2(0.25 * SCR_WIDTH, 0.41 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "鼠标移动调整视角"
+    sentences.push_back(Sentence({ 42, 43, 44, 45, 46, 47, 48, 49 }, glm::vec2(0.25 * SCR_WIDTH, 0.25 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "鼠标滚轮进行缩放"
+    sentences.push_back(Sentence({ 50, 51, 52, 53, 54, 55, 56, 57 }, glm::vec2(SCR_WIDTH * 0.02f, SCR_HEIGHT * 0.7), glm::vec2(0.0f, 0.0f),
+        SCR_WIDTH * 2.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "恭喜你逃出了迷宫"
+
 }
 
 #endif
