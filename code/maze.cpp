@@ -248,29 +248,22 @@ bool maze::mazepeng(glm::vec3 m1, glm::vec3 m2, glm::vec3 m3) {
 }
 
 bool maze::linepeng(glm::vec3 a1, glm::vec3 a2, glm::vec3 b1, glm::vec3 b2) {
-    //float axmin = a1.x > a2.x ? a2.x : a1.x;
-    //float axmax = a1.x == axmin ? a2.x : a1.x;
-    //float bxmin = b1.x > b2.x ? b2.x : b1.x;
-    //float bxmax = b1.x == bxmin ? b2.x : b1.x;
-    //if (axmin >= bxmax || axmax <= bxmin) {
-    //    return false;
-    //}
-    //float azmin = a1.z > a2.z ? a2.z : a1.z;
-    //float azmax = a1.z == azmin ? a2.z : a1.z;
-    //float bzmin = b1.z > b2.z ? b2.z : b1.z;
-    //float bzmax = b1.z == bzmin ? b2.z : b1.z;
-    //if (azmin >= bzmax || azmax < bzmin) {
-    //    return false;
-    //}
-    //return true;
-
-    float xa1 = a2.x, ya1 = a2.z, xa2 = a1.x, ya2 = a1.z, xb1 = b1.x, xb2 = b2.x, yb1 = b1.z, yb2 = b2.z;
-    if (((xa2 - xa1) * (yb1 - ya1) - (xb1 - xa1) * (ya2 - ya1)) *
-        ((xa2 - xa1) * (yb2 - ya1) - (xb2 - xa1) * (ya2 - ya1)) > 0)
+    /*
+    线段(a1a2),(b1,b2)
+    相交,等价于a1,a2在(b1,b2)两侧且b1,b2在(a1,a2)两侧
+    a1,a2在(b1,b2)两侧,等价于((b1a1)\times(b1b2))*((b1a2)\times(b1b2))<0
+    b1,b2在(a1,a2)两侧,等价于((a1b1)\times(a1a2))*((a1b2)\times(a1a2))<0
+    二维向量叉乘,a\times b=(a_z*b_x-a_x*b_z)e
+    (b1a1_z*b1b2_x-b1a1_x*b1b2_z)*(b1a2_z*b1b2_x-b1a2_x*b1b2_z)<0
+    (a1b1_z*a1a2_x-a1b1_x*a1a2_z)*(a1b2_z*a1a2_x-a1b2_x*a1a2_z)<0
+    */
+    glm::vec3 b1a1 = a1 - b1, b1b2 = b2 - b1, b1a2 = a2 - b1, a1b1 = b1 - a1, a1a2 = a2 - a1, a1b2 = b2 - a1;
+    if ((b1a1.z * b1b2.x - b1a1.x * b1b2.z) * (b1a2.z * b1b2.x - b1a2.x * b1b2.z) >= 0) {
         return false;
-    if (((xb2 - xb1) * (ya1 - yb1) - (xa1 - xb1) * (yb2 - yb1)) *
-        ((xb2 - xb1) * (ya2 - yb1) - (xa2 - xb1) * (yb2 - yb1)) > 0)
+    }
+    if ((a1b1.z * a1a2.x - a1b1.x * a1a2.z) * (a1b2.z * a1a2.x - a1b2.x * a1a2.z) >= 0) {
         return false;
+    }
     return true;
 }
 bool maze::rectanglepeng(glm::vec3 a1, glm::vec3 a2, glm::vec3 a3, glm::vec3 b1,

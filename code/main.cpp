@@ -1,4 +1,7 @@
 #include "render.h"
+#include <Mmsystem.h>
+#include <mciapi.h>
+#pragma comment(lib, "Winmm.lib")
 
 ostream& operator<<(ostream& o, glm::vec3 v3)
 {
@@ -13,6 +16,7 @@ void processInput(GLFWwindow* window);
 
 int main()
 {
+    mciSendString("open \"music\\Hello.mp3\" type mpegvideo alias mp3", NULL, 0, NULL);
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -119,7 +123,7 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 加载文字字形纹理
-    std::string fontPathChi = "C:\\Windows\\Fonts\\STXINGKA.TTF";   // 中文字体
+    std::string fontPathChi = "C:\\Windows\\Fonts\\simsun.ttc";   // 中文字体
     std::string fontPathEng = "C:\\Windows\\Fonts\\arial.ttf";      // 英文字母字体
     glm::uvec2 pixelSize = glm::uvec2(48, 48);                      // 字体宽高
     loadGlyph(textShader, fontPathChi, fontPathEng, pixelSize);
@@ -206,6 +210,7 @@ int main()
         // “开始游戏”状态
         if (gameState == GAMING) {
             if (firstGaming) {
+                mciSendString("play mp3 from 0 repeat", NULL, 0, NULL);
                 // 刚进入游戏模式时，设置好人物和摄像机的初始位置
                 modelShader.use();
                 MODELSCALE = cell_size / 40;
@@ -286,6 +291,7 @@ int main()
             sentences[9].Draw(textShader);
             // "返回"
             sentences[4].Draw(textShader);
+            mciSendString("stop mp3", NULL, 0, NULL);
         }
 
 
@@ -516,12 +522,12 @@ void processInput(GLFWwindow* window)
         if (glm::distance(myModel.Position, exitPos) <= cell_size / 2) {
             gameState = ENDING;
         }
-        if (glm::distance(myModel.Position, entrancePos + glm::vec3(0.0f, 0.0f, cell_size)) <= cell_size / 2) {
-            gameState = ENDING;
-        }
-        if (glm::distance(myModel.Position, entrancePos + glm::vec3(cell_size, 0.0f, 0.0f)) <= cell_size / 2) {
-            gameState = ENDING;
-        }
+        //if (glm::distance(myModel.Position, entrancePos + glm::vec3(0.0f, 0.0f, cell_size)) <= cell_size / 2) {
+        //    gameState = ENDING;
+        //}
+        //if (glm::distance(myModel.Position, entrancePos + glm::vec3(cell_size, 0.0f, 0.0f)) <= cell_size / 2) {
+        //    gameState = ENDING;
+        //}
     }
 
     else if (gameState == ENDING) {
