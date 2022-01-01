@@ -2,7 +2,7 @@
 
 
 
-# Introduction
+## Introduction
 
 一个控制人物走迷宫的游戏。
 
@@ -12,15 +12,13 @@
 
 走迷宫时，一共有两次渲染，先渲染阴影，再渲染物体。摄像机和人物一起移动。
 
-# maze 生成与渲染
 
 
+## maze 生成与渲染
 
-# 人物和 maze 的碰撞
+## 人物和 maze 的碰撞
 
-
-
-# BGM
+## BGM
 
 使用mciSendString来控制音乐的播放
 
