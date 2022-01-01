@@ -132,7 +132,6 @@ void maze::make_maze() {
     cubeScales.push_back(glm::vec3(path_size, maze_height, box_width));
     cubeScales.push_back(glm::vec3(box_width, maze_height, path_size));
     cubeScales.push_back(glm::vec3(maze_size, 0.1f, maze_size));
-    cubeScales.push_back(glm::vec3(cell_size, cell_size, cell_size));
     float cell_b_x, cell_b_z;
     for (int i = 0; i < maze_map.size(); i++) {
         for (int j = 0; j < maze_map[0].size(); j++) {
@@ -248,15 +247,6 @@ bool maze::mazepeng(glm::vec3 m1, glm::vec3 m2, glm::vec3 m3) {
 }
 
 bool maze::linepeng(glm::vec3 a1, glm::vec3 a2, glm::vec3 b1, glm::vec3 b2) {
-    /*
-    线段(a1a2),(b1,b2)
-    相交,等价于a1,a2在(b1,b2)两侧且b1,b2在(a1,a2)两侧
-    a1,a2在(b1,b2)两侧,等价于((b1a1)\times(b1b2))*((b1a2)\times(b1b2))<0
-    b1,b2在(a1,a2)两侧,等价于((a1b1)\times(a1a2))*((a1b2)\times(a1a2))<0
-    二维向量叉乘,a\times b=(a_z*b_x-a_x*b_z)e
-    (b1a1_z*b1b2_x-b1a1_x*b1b2_z)*(b1a2_z*b1b2_x-b1a2_x*b1b2_z)<0
-    (a1b1_z*a1a2_x-a1b1_x*a1a2_z)*(a1b2_z*a1a2_x-a1b2_x*a1a2_z)<0
-    */
     glm::vec3 b1a1 = a1 - b1, b1b2 = b2 - b1, b1a2 = a2 - b1, a1b1 = b1 - a1, a1a2 = a2 - a1, a1b2 = b2 - a1;
     if ((b1a1.z * b1b2.x - b1a1.x * b1b2.z) * (b1a2.z * b1b2.x - b1a2.x * b1b2.z) >= 0) {
         return false;

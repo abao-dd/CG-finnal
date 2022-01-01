@@ -64,7 +64,7 @@ int main()
 
     //阴影贴图，深度贴图
     Shader simpleDepthShader("shaderfile/shadowmap_vs.txt", "shaderfile/shadowmap_fs.txt");
-    Shader debugDepthQuad("shaderfile/debug_quad_vs.txt", "shaderfile/debug_quad_fs.txt");
+    //Shader debugDepthQuad("shaderfile/debug_quad_vs.txt", "shaderfile/debug_quad_fs.txt");
     // 模型
     Shader modelShader("shaderfile/model_loading_vs.txt", "shaderfile/model_loading_fs.txt");
     // 文字
