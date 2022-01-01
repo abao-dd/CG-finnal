@@ -17,7 +17,12 @@
 #include<iostream>
 #include<iomanip>
 
+#include <Mmsystem.h>
+#include <mciapi.h>
+#pragma comment(lib, "Winmm.lib")
+
 // window settings
+GLFWwindow* window=NULL;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
@@ -44,9 +49,10 @@ glm::vec3 exitPos;  // 迷宫出口坐标
 
 // camera
 Camera camera1;
-Camera camera2(glm::vec3(0.0f, 10.0f, 0.0f));
 //FPCamera camera3;
 Camera camera3(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f), 3.0f);
+
+//mouse
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 float xoffset;
@@ -54,6 +60,7 @@ float yoffset;
 bool firstMouse = true;
 bool MouseLeftButtonPress = false;
 
+//模型
 Model myModel;
 float modelYaw = 90.0f;
 
@@ -68,44 +75,24 @@ enum GameState {
 
 // 游戏初始状态渲染"开始目录"界面
 GameState gameState = STARTMENU;
-
 bool firstGaming = true;
 
 //light
 glm::vec3 lightPos;
 
-//阴影实现相关变量
+//顶点
 unsigned int planeVAO = 0, planeVBO = 0;
 unsigned int skyboxVAO = 0, skyboxVBO = 0;
 unsigned int VBO = 0, boxVAO = 0;
 
-void render_plane() {
-    if (planeVBO == 0) {
-        float planeVertices[] = {
-            // positions            // normals         // texcoords
-             25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-            -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-            -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+// 加载文字字形纹理
+std::string fontPathChi = "C:\\Windows\\Fonts\\simsun.ttc";   // 中文字体
+std::string fontPathEng = "C:\\Windows\\Fonts\\arial.ttf";      // 英文字母字体
+glm::uvec2 pixelSize = glm::uvec2(48, 48);                      // 字体宽高
 
-             25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-            -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-             25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
-        };
-        glGenVertexArrays(1, &planeVAO);
-        glGenBuffers(1, &planeVBO);
-        glBindVertexArray(planeVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glBindVertexArray(0);
-    }
-
-}
+//阴影实现相关变量
+const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+unsigned int depthMapFBO; unsigned int depthMap;
 
 void render_skybox(const Shader& skyboxShader, unsigned int& cubemapTexture, Camera& camera) {
     if (skyboxVAO == 0) {
@@ -314,8 +301,6 @@ void render_sense(Shader& boxShader, glm::mat4& lightSpaceMatrix, unsigned int d
 
     //点光源
     boxShader.setVec3("pointLights[0].position", glm::vec3(model * glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
-
-
     boxShader.setVec3("pointLights[0].ambient", 0.5f, 0.5f, 0.5f);
     boxShader.setVec3("pointLights[0].diffuse", 1.0f, 1.0f, 1.0f);
     boxShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
@@ -352,11 +337,6 @@ void render_island(Shader& modelShader, Model& mmodel, Camera& camera) {
     model = glm::scale(model, glm::vec3(0.14f, 0.14f, 0.14f));
     modelShader.setMat4("model", model);
     mmodel.Draw(modelShader);
-
-    //
-    //    //modelShader.use();
-
-
 }
 
 //加载人物模型
@@ -507,5 +487,38 @@ void loadGlyph(Shader& textShader, std::string fontPathChinese, std::string font
 
 }
 
+//显示帧数
+void show_maze_fps() {
+    ++m_fps_counter;
+    m_fps_time_recorder += deltaTime;
+    if (m_fps_counter >= 100) {
+        fps = static_cast<int>(m_fps_counter / m_fps_time_recorder);
+        m_fps_counter = 0;
+        m_fps_time_recorder = 0.0f;
+        std::stringstream ss;
+        ss << "maze FPS:" << std::setiosflags(std::ios::left) << std::setw(3) << fps;
+        glfwSetWindowTitle(window, ss.str().c_str());
+    }
+}
+
+void depth_buffer() {
+    // configure depth map FBO,深度映射保存
+    // -----------------------
+    glGenFramebuffers(1, &depthMapFBO);  //为渲染的深度贴图创建一个帧缓冲对象
+     //create depth texture
+    glGenTextures(1, &depthMap);  //创建一个2D纹理，提供给帧缓冲的深度缓冲使用
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // 把生成的深度纹理作为帧缓冲的深度缓冲
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 #endif
 

@@ -1,13 +1,10 @@
 #include "render.h"
-#include <Mmsystem.h>
-#include <mciapi.h>
-#pragma comment(lib, "Winmm.lib")
 
-ostream& operator<<(ostream& o, glm::vec3 v3)
-{
-    o << "(" << v3.x << ", " << v3.y << ", " << v3.z << ")";
-    return o;
-}
+//ostream& operator<<(ostream& o, glm::vec3 v3)
+//{
+//    o << "(" << v3.x << ", " << v3.y << ", " << v3.z << ")";
+//    return o;
+//}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -26,7 +23,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -59,7 +56,7 @@ int main()
     // maze
     Shader boxShader("shaderfile/material_vs.txt", "shaderfile/material_fs.txt");
     //minimaze
-    Shader minimazeShader("shaderfile/minimaze_vs.txt", "shaderfile/minimaze_fs.txt");
+    //Shader minimazeShader("shaderfile/minimaze_vs.txt", "shaderfile/minimaze_fs.txt");
     //skybox
     Shader skyboxShader("shaderfile/skybox_vs.txt", "shaderfile/skybox_fs.txt");
     //light
@@ -96,36 +93,15 @@ int main()
     };
     unsigned int cubemapTexture = loadCubemap(faces);
 
-    //添加纹理，新箱子，漫反射纹理和镜面反射纹理
+    //添加纹理
     unsigned int diffuseMapwhite = loadTexture("textures/63.jpg");
     unsigned int diffuseMapblue = loadTexture("textures/147fq.jpg");
     unsigned int diffusemount = loadTexture("textures/61.jpg");
 
-    // configure depth map FBO,深度映射保存
-    // -----------------------
-    const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
-    unsigned int depthMapFBO;
-    glGenFramebuffers(1, &depthMapFBO);  //为渲染的深度贴图创建一个帧缓冲对象
-     //create depth texture .new
-    unsigned int depthMap;
-    glGenTextures(1, &depthMap);  //创建一个2D纹理，提供给帧缓冲的深度缓冲使用
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // 把生成的深度纹理作为帧缓冲的深度缓冲
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+    //深度缓冲
+    depth_buffer();
+    
     // 加载文字字形纹理
-    std::string fontPathChi = "C:\\Windows\\Fonts\\simsun.ttc";   // 中文字体
-    std::string fontPathEng = "C:\\Windows\\Fonts\\arial.ttf";      // 英文字母字体
-    glm::uvec2 pixelSize = glm::uvec2(48, 48);                      // 字体宽高
     loadGlyph(textShader, fontPathChi, fontPathEng, pixelSize);
 
     // render loop
@@ -139,16 +115,7 @@ int main()
         lastFrame = currentFrame;
 
         //显示帧数
-        ++m_fps_counter;
-        m_fps_time_recorder += deltaTime;
-        if (m_fps_counter >= 100) {
-            fps = static_cast<int>(m_fps_counter / m_fps_time_recorder);
-            m_fps_counter = 0;
-            m_fps_time_recorder = 0.0f;
-            std::stringstream ss;
-            ss << "maze FPS:" << std::setiosflags(std::ios::left) << std::setw(3) << fps;
-            glfwSetWindowTitle(window, ss.str().c_str());
-        }
+        show_maze_fps();
 
         // input 
         // -----
@@ -221,9 +188,10 @@ int main()
 
                 firstGaming = false;
             }
+            //捕捉鼠标
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-            // 1. render depth of scene to texture (from light's perspective) .new
+            // 1. render depth of scene to texture (from light's perspective)
             // --------------------------------------------------------------
             glm::mat4 lightProjection, lightView;
             glm::mat4 lightSpaceMatrix;
@@ -252,6 +220,7 @@ int main()
             glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            //渲染灯光
             lightCubeShader.use();
             render_light(lightCubeShader, currentFrame, camera1);
 
@@ -260,7 +229,7 @@ int main()
             glBindTexture(GL_TEXTURE_2D, diffuseMapwhite);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, depthMap);
-
+            //渲染迷宫
             boxShader.use();
             render_sense(boxShader, lightSpaceMatrix, diffuseMapwhite, diffuseMapblue, currentFrame, camera1);
 
@@ -291,7 +260,6 @@ int main()
             sentences[9].Draw(textShader);
             // "返回"
             sentences[4].Draw(textShader);
-            mciSendString("stop mp3", NULL, 0, NULL);
         }
 
 
@@ -361,11 +329,11 @@ void processInput(GLFWwindow* window)
             if (MouseLeftButtonPress == false) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
                 glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-                std::cout << mousePos.x << " " << mousePos.y << std::endl;
+                /*std::cout << mousePos.x << " " << mousePos.y << std::endl;*/
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y)) {
                     sentences[4].process_press();
                 }
-                std::cout << "press" << std::endl;
+                /*std::cout << "press" << std::endl;*/
                 
             }
             MouseLeftButtonPress = true;
@@ -374,12 +342,11 @@ void processInput(GLFWwindow* window)
             if (MouseLeftButtonPress == true) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
                 glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y) && sentences[4].textPressed) {
                     gameState = STARTMENU;
                 }
                 sentences[4].process_release();
-                std::cout << "release" << std::endl;
+                /*std::cout << "release" << std::endl;*/
             }
             MouseLeftButtonPress = false;
         }
@@ -551,6 +518,7 @@ void processInput(GLFWwindow* window)
 
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y) && sentences[4].textPressed) {
                     gameState = STARTMENU;
+                    mciSendString("stop mp3", NULL, 0, NULL);
                 }
                 sentences[4].process_release();
             }
