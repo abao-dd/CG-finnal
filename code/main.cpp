@@ -6,10 +6,11 @@
 //    return o;
 //}
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
 
 int main()
 {
@@ -101,7 +102,7 @@ int main()
     //深度缓冲
     depth_buffer();
     
-    // 加载文字字形纹理
+    // 加载字形纹理
     loadGlyph(textShader, fontPathChi, fontPathEng, pixelSize);
 
     // render loop
@@ -117,16 +118,13 @@ int main()
         //显示帧数
         show_maze_fps();
 
-        // input 
-        // -----
+        // 处理键盘和鼠标点击输入
         processInput(window);
 
-        // render
-        // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // 状态机处理，不同状态渲染不同界面
+        // 处理状态机，不同状态渲染不同界面
         // ----------
         // “开始目录”状态
         if (gameState == STARTMENU) {
@@ -147,7 +145,7 @@ int main()
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             // "逃出错综复杂的迷宫吧"
             sentences[5].Draw(textShader);
-            RenderText(textShader, "awsd", 0.225 * SCR_WIDTH, 0.58 * SCR_HEIGHT, 1.25f, glm::vec3(1.0, 1.0, 1.0));
+            RenderText(textShader, "awsd", 0.24 * SCR_WIDTH, 0.58 * SCR_HEIGHT, 1.0f * SCR_WIDTH / 800, glm::vec3(1.0, 1.0, 1.0));
             // "控制人物移动"
             sentences[6].Draw(textShader);
             // "鼠标移动调整视角"
@@ -166,7 +164,7 @@ int main()
             // 渲染人物
             modelShader.use();
             myModel.SetModelTransformation(glm::vec3(0.0f, -myModel.getOriginalCenter().y * 0.2, 0.0f), 0.0f, 0.2f);
-            render_character(modelShader, myModel, camera3);
+            render_character(modelShader, myModel, cameraMesh);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -183,12 +181,12 @@ int main()
                 MODELSCALE = cell_size / 40;
                 myModel.SetModelTransformation(entrancePos, glm::radians(90.0f));
 
-                camera1 = Camera(myModel.getChangedCenter() + glm::vec3(-cell_size / 2, 0.0f, 0.0f),
+                cameraGaming = Camera(myModel.getChangedCenter() + glm::vec3(-cell_size / 2, 0.0f, 0.0f),
                     myModel.getChangedCenter(), cell_size / 2);
 
                 firstGaming = false;
             }
-            //捕捉鼠标
+            //捕捉并隐藏鼠标
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
             // 1. render depth of scene to texture (from light's perspective)
@@ -209,7 +207,7 @@ int main()
             glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            render_shadowsense(simpleDepthShader, diffuseMapwhite, diffuseMapblue, camera1);
+            render_shadowsense(simpleDepthShader, diffuseMapwhite, diffuseMapblue, cameraGaming);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             // reset viewport
@@ -222,7 +220,7 @@ int main()
 
             //渲染灯光
             lightCubeShader.use();
-            render_light(lightCubeShader, currentFrame, camera1);
+            render_light(lightCubeShader, currentFrame, cameraGaming);
 
             // bind diffuse map,绑定纹理
             glActiveTexture(GL_TEXTURE0);
@@ -231,21 +229,21 @@ int main()
             glBindTexture(GL_TEXTURE_2D, depthMap);
             //渲染迷宫
             boxShader.use();
-            render_sense(boxShader, lightSpaceMatrix, diffuseMapwhite, diffuseMapblue, currentFrame, camera1);
+            render_sense(boxShader, lightSpaceMatrix, diffuseMapwhite, diffuseMapblue, currentFrame, cameraGaming);
 
             // 渲染岛
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, diffusemount);
             modelShader.use();
-            render_island(modelShader, islandModel, camera1);
+            render_island(modelShader, islandModel, cameraGaming);
 
             // 渲染人物
             modelShader.use();
-            render_character(modelShader, myModel, camera1);
+            render_character(modelShader, myModel, cameraGaming);
 
             // 天空盒
             skyboxShader.use();
-            render_skybox(skyboxShader, cubemapTexture, camera1);
+            render_skybox(skyboxShader, cubemapTexture, cameraGaming);
         }
 
         // “游戏结束”状态
@@ -254,7 +252,7 @@ int main()
 
             //天空盒
             skyboxShader.use();
-            render_skybox(skyboxShader, cubemapTexture, camera1);
+            render_skybox(skyboxShader, cubemapTexture, cameraGaming);
 
             // "恭喜你逃出了迷宫"
             sentences[9].Draw(textShader);
@@ -298,6 +296,7 @@ void processInput(GLFWwindow* window)
             }
             MouseLeftButtonPress = true;
         }
+
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
             if (MouseLeftButtonPress == true) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
@@ -313,31 +312,29 @@ void processInput(GLFWwindow* window)
                 }
                 if (sentences[3].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y) && sentences[3].textPressed) {
                     gameState = MESHVIEWING;
+                    cameraMesh.MouseSensitivity = 0.2f;
                 }
                 sentences[1].process_release();
                 sentences[2].process_release();
                 sentences[3].process_release();
-                
             }
             MouseLeftButtonPress = false;
         }
     }
     
-    // “游戏说明”状态，处理鼠标点击事件。鼠标点击“返回”可以回到开始界面。
+    // “游戏说明”状态，处理鼠标点击事件。鼠标左键点击“返回”可以回到开始界面。
     else if (gameState == INTRODUCTION) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             if (MouseLeftButtonPress == false) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
                 glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-                /*std::cout << mousePos.x << " " << mousePos.y << std::endl;*/
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y)) {
                     sentences[4].process_press();
                 }
-                /*std::cout << "press" << std::endl;*/
-                
             }
             MouseLeftButtonPress = true;
         }
+
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
             if (MouseLeftButtonPress == true) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
@@ -346,29 +343,21 @@ void processInput(GLFWwindow* window)
                     gameState = STARTMENU;
                 }
                 sentences[4].process_release();
-                /*std::cout << "release" << std::endl;*/
             }
             MouseLeftButtonPress = false;
         }
     }
 
-    // “查看网格”状态，处理键盘和鼠标点击事件。。。。。。。。。。待修改
+    // “查看网格”状态，处理键盘点击事件。鼠标左键点击“返回”可以回到开始界面。
     else if (gameState == MESHVIEWING) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-            glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
-            glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
-            lastX = mousePos.x;
-            lastY = mousePos.y;
-            xoffset = 0;
-            yoffset = 0;
-
             if (MouseLeftButtonPress == false) {
+                glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
+                glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y)) {
                     sentences[4].process_press();
                 }
             }
-
             MouseLeftButtonPress = true;
         }
 
@@ -376,113 +365,36 @@ void processInput(GLFWwindow* window)
             if (MouseLeftButtonPress == true) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
                 glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y) && sentences[4].textPressed) {
                     gameState = STARTMENU;
                 }
                 sentences[4].process_release();
             }
-
             MouseLeftButtonPress = false;
         }
 
     }
 
-    // 
+    // “游戏中”状态，处理键盘点击事件。按下awsd控制人物移动
     else if (gameState == GAMING) {
-        float modelSpeed = 0.5f * deltaTime;
-        float modelRotSpeed = 0.7f * deltaTime;
-
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            glm::vec3 modelFront = camera1.Front;
-            float originYaw = myModel.Yaw;
-            glm::vec3 originPos = myModel.Position;
-
-            if (modelFront.x >= 0) {
-                //modelYaw = originYaw + modelRotSpeed * (acos(modelFront.z) - originYaw);
-                modelYaw = acos(modelFront.z);
-            }
-            else {
-                //modelYaw = originYaw + modelRotSpeed * (-acos(modelFront.z) - originYaw);
-                modelYaw = -acos(modelFront.z);
-            }
-
-
-            myModel.SetModelTransformation(myModel.Position + modelSpeed * modelFront, modelYaw);
-
-            if (m.mazepeng(myModel.getChangedBoxPoints()[2], myModel.getChangedBoxPoints()[1], myModel.getChangedBoxPoints()[0])) {
-                myModel.Position -= modelSpeed * modelFront;
-                myModel.SetModelTransformation(myModel.Position, originYaw);
-            }
-
-            camera1.ProcessKeyboard(myModel.getChangedCenter());
+            myModel.ProcessKeyboard(FORWARD, deltaTime, cameraGaming, m);
+            cameraGaming.ProcessKeyboard(myModel.getChangedCenter());
         }
+
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            glm::vec3 modelFront = -camera1.Front;
-            float originYaw = myModel.Yaw;
-            glm::vec3 originPos = myModel.Position;
-
-            if (modelFront.x >= 0) {
-                //modelYaw = originYaw + modelRotSpeed * (acos(modelFront.z) - originYaw);
-                modelYaw = acos(modelFront.z);
-            }
-            else {
-                //modelYaw = originYaw + modelRotSpeed * (-acos(modelFront.z) - originYaw);
-                modelYaw = -acos(modelFront.z);
-            }
-
-            myModel.SetModelTransformation(myModel.Position + modelSpeed * modelFront, modelYaw);
-
-            if (m.mazepeng(myModel.getChangedBoxPoints()[2], myModel.getChangedBoxPoints()[1], myModel.getChangedBoxPoints()[0])) {
-                myModel.Position -= modelSpeed * modelFront;
-                myModel.SetModelTransformation(myModel.Position, originYaw);
-            }
-
-            camera1.ProcessKeyboard(myModel.getChangedCenter());
+            myModel.ProcessKeyboard(BACKWARD, deltaTime, cameraGaming, m);
+            cameraGaming.ProcessKeyboard(myModel.getChangedCenter());
         }
 
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            glm::vec3 modelFront = camera1.Right;
-            float originYaw = myModel.Yaw;
-            glm::vec3 originPos = myModel.Position;
-
-            if (glm::dot(myModel.Front, camera1.Front) >= 0) {
-                modelYaw = myModel.Yaw - modelRotSpeed * acos(0);
-            }
-            else {
-                modelYaw = myModel.Yaw + modelRotSpeed * acos(0);
-            }
-
-            myModel.SetModelTransformation(myModel.Position + modelSpeed * modelFront, modelYaw);
-
-            if (m.mazepeng(myModel.getChangedBoxPoints()[2], myModel.getChangedBoxPoints()[1], myModel.getChangedBoxPoints()[0])) {
-                myModel.Position -= modelSpeed * modelFront;
-                myModel.SetModelTransformation(myModel.Position, originYaw);
-            }
-
-            camera1.ProcessKeyboard(myModel.getChangedCenter());
+            myModel.ProcessKeyboard(RIGHT, deltaTime, cameraGaming, m);
+            cameraGaming.ProcessKeyboard(myModel.getChangedCenter());
         }
 
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            glm::vec3 modelFront = -camera1.Right;
-            float originYaw = myModel.Yaw;
-            glm::vec3 originPos = myModel.Position;
-
-            if (glm::dot(myModel.Front, camera1.Front) >= 0) {
-                modelYaw = myModel.Yaw + modelRotSpeed * acos(0);
-            }
-            else {
-                modelYaw = myModel.Yaw - modelRotSpeed * acos(0);
-            }
-
-            myModel.SetModelTransformation(myModel.Position + modelSpeed * modelFront, modelYaw);
-
-            if (m.mazepeng(myModel.getChangedBoxPoints()[2], myModel.getChangedBoxPoints()[1], myModel.getChangedBoxPoints()[0])) {
-                myModel.Position -= modelSpeed * modelFront;
-                myModel.SetModelTransformation(myModel.Position, originYaw);
-            }
-
-            camera1.ProcessKeyboard(myModel.getChangedCenter());
+            myModel.ProcessKeyboard(LEFT, deltaTime, cameraGaming, m);
+            cameraGaming.ProcessKeyboard(myModel.getChangedCenter());
         }
 
          //判断走到出口
@@ -497,17 +409,16 @@ void processInput(GLFWwindow* window)
         //}
     }
 
+    // “游戏结束”状态，处理鼠标点击事件。鼠标左键点击“返回”可以回到开始界面
     else if (gameState == ENDING) {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
             glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
             if (MouseLeftButtonPress == false) {
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y)) {
                     sentences[4].process_press();
                 }
             }
-
             MouseLeftButtonPress = true;
         }
 
@@ -515,30 +426,18 @@ void processInput(GLFWwindow* window)
             if (MouseLeftButtonPress == true) {
                 glm::dvec2 mousePos = glm::dvec2(0.0, 0.0);
                 glfwGetCursorPos(window, &mousePos.x, &mousePos.y);
-
                 if (sentences[4].judgeMouseButton(mousePos.x, SCR_HEIGHT - mousePos.y) && sentences[4].textPressed) {
                     gameState = STARTMENU;
                     mciSendString("stop mp3", NULL, 0, NULL);
                 }
                 sentences[4].process_release();
             }
-
             MouseLeftButtonPress = false;
         }
     }
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
-
-
-// 鼠标移动会自动调用该函数，计算鼠标位置和偏移。。。。。。。。。待修改
+// 鼠标移动会自动调用该函数，计算鼠标位置和偏移
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)
@@ -554,45 +453,33 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
+    // “查看网格”状态
     if (gameState == MESHVIEWING) {
+        // 鼠标按下并拖动鼠标可以从不同视角查看网格
         if (MouseLeftButtonPress) {
-            glm::mat4 cameraRotMat(1.0f);
-            //cameraRotMat = glm::rotate(cameraRotMat, -xoffset * 0.001f, glm::vec3(0, 1, 0));
-            //cameraRotMat = glm::rotate(cameraRotMat, yoffset * 0.001f, glm::vec3(1, 0, 0));
-            if (std::abs(xoffset) > std::abs(yoffset)) {
-                cameraRotMat = glm::rotate(glm::mat4(1.0f), -xoffset * 0.001f, glm::vec3(0, 1, 0));
-                camera3.Position = glm::vec3(cameraRotMat * glm::vec4(camera3.Position, 1.0f));
-            }
-            else {
-                //glm::vec3 rotAxie= camera3.Right;
-                //if(rotAxie != glm::vec3(0.0f)) 
-                cameraRotMat = glm::rotate(glm::mat4(1.0f), yoffset * 0.001f, camera3.Right);
-                glm::vec3 originPos = camera3.Position;
-                camera3.Position = glm::vec3(cameraRotMat * glm::vec4(camera3.Position, 1.0f));
-                if (camera3.Position.x * originPos.x < 0 && camera3.Position.z * originPos.z < 0) {
-                    //if (originPos.y > 0) {
-                        //camera3.Position = glm::vec3(0.0f, 2.99, 0.0f);
-                    //}
-                    //else {
-                    //    camera3.Position = glm::vec3(0.0f, -2.9, 0.0f);
-                    //}
-                }
-            }
-            camera3.Front = glm::normalize(glm::vec3(0.0f) - camera3.Position);
-            camera3.Right = glm::normalize(glm::cross(camera3.Front, camera3.WorldUp));
-            camera3.Up = glm::normalize(glm::cross(camera3.Right, camera3.Front));
+            cameraMesh.ProcessMouseMovement(xoffset, yoffset, true);
         }
     }
 
+    // “游戏中”状态
     if (gameState == GAMING) {
-        camera1.ProcessMouseMovement(xoffset, yoffset);
+        cameraGaming.ProcessMouseMovement(xoffset, yoffset);
     }
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera1.ProcessMouseScroll(yoffset);
-    camera3.ProcessMouseScroll(yoffset);
+    cameraGaming.ProcessMouseScroll(yoffset);
+    cameraMesh.ProcessMouseScroll(yoffset);
 }

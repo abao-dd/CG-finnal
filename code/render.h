@@ -22,7 +22,7 @@
 #pragma comment(lib, "Winmm.lib")
 
 // window settings
-GLFWwindow* window=NULL;
+GLFWwindow* window = NULL;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
@@ -47,10 +47,10 @@ float cell_size;
 glm::vec3 entrancePos;  // 迷宫入口坐标
 glm::vec3 exitPos;  // 迷宫出口坐标
 
-// camera
-Camera camera1;
-//FPCamera camera3;
-Camera camera3(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f), 3.0f);
+// “游戏中”状态的camera
+Camera cameraGaming;
+// “查看网格”状态的camera
+Camera cameraMesh(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f), 3.0f);
 
 //mouse
 float lastX = (float)SCR_WIDTH / 2.0;
@@ -62,7 +62,6 @@ bool MouseLeftButtonPress = false;
 
 //模型
 Model myModel;
-float modelYaw = 90.0f;
 
 // 游戏状态
 enum GameState {
@@ -85,8 +84,8 @@ unsigned int planeVAO = 0, planeVBO = 0;
 unsigned int skyboxVAO = 0, skyboxVBO = 0;
 unsigned int VBO = 0, boxVAO = 0;
 
-// 加载文字字形纹理
-std::string fontPathChi = "C:\\Windows\\Fonts\\simsun.ttc";   // 中文字体
+// 加载字形纹理相关参数
+std::string fontPathChi = "C:\\Windows\\Fonts\\simsun.ttc";     // 中文汉字字体
 std::string fontPathEng = "C:\\Windows\\Fonts\\arial.ttf";      // 英文字母字体
 glm::uvec2 pixelSize = glm::uvec2(48, 48);                      // 字体宽高
 
@@ -476,7 +475,7 @@ void loadGlyph(Shader& textShader, std::string fontPathChinese, std::string font
         SCR_WIDTH * 0.7f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "返回"
     sentences.push_back(Sentence({ 18, 19, 20, 21, 22, 23, 24, 25, 26, 27 }, glm::vec2(0.1 * SCR_WIDTH, 0.8 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
         SCR_WIDTH * 1.35f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "逃出错综复杂的迷宫吧"
-    sentences.push_back(Sentence({ 28, 29, 30, 31, 32, 33 }, glm::vec2(0.4125 * SCR_WIDTH, 0.58 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
+    sentences.push_back(Sentence({ 28, 29, 30, 31, 32, 33 }, glm::vec2(0.39 * SCR_WIDTH, 0.58 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
         SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "控制人物移动"
     sentences.push_back(Sentence({ 34, 35, 36, 37, 38, 39, 40, 41 }, glm::vec2(0.25 * SCR_WIDTH, 0.41 * SCR_HEIGHT), glm::vec2(0.0f, 0.0f),
         SCR_WIDTH * 1.0f / 800, glm::vec3(1.0f, 1.0f, 1.0f)));    // "鼠标移动调整视角"
@@ -520,5 +519,6 @@ void depth_buffer() {
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
 #endif
 

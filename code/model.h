@@ -17,6 +17,7 @@
 
 #include "mesh.h"
 #include "shader.h"
+#include"maze.h"
 
 #include <string>
 #include <fstream>
@@ -26,17 +27,17 @@
 #include <vector>
 using namespace std;
 
-enum Model_Movement {
-    MFORWARD,
-    MBACKWARD,
-    MLEFT,
-    MRIGHT
+enum ModelMovement {
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT
 };
 
-float MODELYAW = 0.0f;
+float MODELYAW = 90.0f;
 float MODELSCALE = 1.0f;
-float MODELMOVESPEED = 2.5f;
-float MODELROTATESPEED = 0.1f;
+float MODELMOVESPEED = 0.5f;
+float MODELROTATESPEED = 0.7f;
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
 
@@ -72,6 +73,7 @@ public:
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
+
     // 模型参数
     glm::vec3 Position;
     glm::vec3 Front;
@@ -181,7 +183,62 @@ public:
         ModelMat = glm::scale(ModelMat, glm::vec3(Scale, Scale, Scale));
     }
 
-    //void ProcessKeyboard();
+    void ProcessKeyboard(ModelMovement direction, float deltaTime, const Camera& camera, maze& mazee) {
+        glm::vec3 originPos = Position;
+        float originYaw = Yaw;
+        glm::vec3 modelFront = glm::vec3(0.0f);
+        glm::vec3 changedPos = glm::vec3(0.0f);
+        float changedYaw = 0.0f;
+
+        if (direction == FORWARD) {
+            modelFront = camera.Front;
+            if (modelFront.x >= 0) {
+                changedYaw = acos(modelFront.z);
+            }
+            else {
+                changedYaw = -acos(modelFront.z);
+            }
+        }
+
+        if (direction == BACKWARD) {
+            modelFront = -camera.Front;
+            if (modelFront.x >= 0) {
+                changedYaw = acos(modelFront.z);
+            }
+            else {
+                changedYaw = -acos(modelFront.z);
+            }
+        }
+
+        if (direction == RIGHT) {
+            modelFront = camera.Right;
+            if (glm::dot(Front, camera.Front) >= 0) {
+                changedYaw = Yaw - RotateSpeed * deltaTime * acos(0);
+            }
+            else {
+                changedYaw = Yaw + RotateSpeed * deltaTime * acos(0);
+            }
+        }
+
+        if (direction == LEFT) {
+            modelFront = -camera.Right;
+            if (glm::dot(Front, camera.Front) >= 0) {
+                changedYaw = Yaw + RotateSpeed * deltaTime * acos(0);
+            }
+            else {
+                changedYaw = Yaw - RotateSpeed * deltaTime * acos(0);
+            }
+        }
+
+        changedPos = Position + MoveSpeed * deltaTime * modelFront;
+
+        SetModelTransformation(changedPos, changedYaw);
+
+        // 做碰撞检测
+        if (mazee.mazepeng(getChangedBoxPoints()[2], getChangedBoxPoints()[1], getChangedBoxPoints()[0])) {
+            SetModelTransformation(originPos, originYaw);
+        }
+    }
 
 private:
 
@@ -419,4 +476,5 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 
     return textureID;
 }
+
 #endif
