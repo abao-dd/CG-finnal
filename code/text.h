@@ -70,9 +70,6 @@ public:
 };
 
 // ¾ä×Ó±äÁ¿
-//extern Sentence sentence1;
-//extern Sentence sentence2;
-//extern Sentence sentence3;
 extern std::vector<Sentence> sentences;
 
 extern unsigned int textVAO, textVBO;
