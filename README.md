@@ -66,7 +66,7 @@ $(a1b1_z*a1a2_x-a1b1_x*a1a2_z)*(a1b2_z*a1a2_x-a1b2_x*a1a2_z)<0$
 
 ​		本项目采用了如下的天空盒模型，以right，left，top，bottom，front，back的顺序为盒子添加纹理。
 
-![](code\textures\skybox\all.jpg)
+![](https://github.com/abao-dd/CG-finnal/blob/master/code/textures/skybox/all.jpg)
 
 ## 光照
 
