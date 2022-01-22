@@ -189,8 +189,6 @@ int main()
             //²¶×½²¢Òþ²ØÊó±ê
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-            // 1. render depth of scene to texture (from light's perspective)
-            // --------------------------------------------------------------
             glm::mat4 lightProjection, lightView;
             glm::mat4 lightSpaceMatrix;
             float near_plane = 1.0f, far_plane = 7.5f;
@@ -202,7 +200,6 @@ int main()
             simpleDepthShader.use();
             simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
-            //Ê×ÏÈ
             glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -227,6 +224,7 @@ int main()
             glBindTexture(GL_TEXTURE_2D, diffuseMapwhite);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, depthMap);
+
             //äÖÈ¾ÃÔ¹¬
             boxShader.use();
             render_sense(boxShader, lightSpaceMatrix, diffuseMapwhite, diffuseMapblue, currentFrame, cameraGaming);
